@@ -1,0 +1,31 @@
+﻿@page "/"
+
+@using communication.shared.Models
+@using System.Threading.Channels;
+@using System.Threading.Tasks;
+
+@inject Channel<Data> _channel
+
+@CurrentData
+
+@code{
+
+    private ChannelReader<Data> _channelReader;
+
+    public string CurrentData { get; set; } = "";
+
+    protected override void OnInitialized()
+    {
+        _channelReader = _channel.Reader;
+
+        _ = Task.Run(async () =>
+        {
+            while (await _channelReader.WaitToReadAsync())
+            {
+                Data _data = await _channelReader.ReadAsync();
+                CurrentData = _data.ToString();
+                InvokeAsync(StateHasChanged);
+            }
+        });
+    }
+}
